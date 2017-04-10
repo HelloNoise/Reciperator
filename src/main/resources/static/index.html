@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Reciperator</title>
+    <link rel="stylesheet" type="text/css" href="css/styles.css">
+</head>
+
+<body style="background: url('img/veggies.jpeg') !important;
+	background-size: cover !important;
+	background-attachment: fixed !important;
+	padding-top: 0px !important;">
+  <div class='container'>
+  	<div class="page-header" style="padding-bottom: 10%">
+  		<img alt="fridge" src="img/refrigerator_red.jpeg" style="width: 15%; float: left; margin: 0% 3% 10% 1%;"/>
+    	<h1>Reciperator</h1 style="float: right;">
+ 	 </div>
+    <div id='root'></div>
+  </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.4.2/react.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.4.2/react-dom.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.24/browser.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
+
+<script type="text/babel">
+  class App extends React.Component {
+		constructor(props) {
+			super(props);
+
+			this.deleteFridge = this.deleteFridge.bind(this);
+      this.createFridge = this.createFridge.bind(this);
+			this.searchRecipes = this.searchRecipes.bind(this);
+      this.addToRecipes = this.addToRecipes.bind(this);
+      this.deleteFromRecipes = this.deleteFromRecipes.bind(this);
+
+			this.state = {
+				fridges: [],
+        recipes: [],
+        faveRecipes: []
+			};
+		}
+
+		componentDidMount() {
+			this.loadFridgesFromServer();
+      this.loadFaveRecipesFromServer();
+
+		}
+
+		loadFridgesFromServer() {
+
+			fetch('http://localhost:8080/fridges' , {
+				  credentials: 'same-origin'})
+    		.then((result) => result.json())
+    		.then((resultData) => {
+			this.setState({
+          		fridges:  resultData._embedded.fridges
+      			});
+			});
+		}
+
+    loadFaveRecipesFromServer() {
+
+			fetch('http://localhost:8080/faveRecipes' , {
+				  credentials: 'same-origin'})
+    		.then((result) => result.json())
+    		.then((resultData) => {
+			       this.setState({
+          		   faveRecipes:  resultData._embedded.faveRecipes
+      			});
+			});
+		}
+
+		deleteFridge(fridge) {
+			fetch(fridge._links.self.href, {method: 'DELETE'})
+    			.then((result) => this.loadFridgesFromServer()
+				);
+		}
+
+    deleteFromRecipes(faveRecipe) {
+      alert("appissa" + faveRecipe.label);
+			fetch(faveRecipe._links.self.href, {method: 'DELETE'})
+    			.then((result) => this.loadFaveRecipesFromServer()
+				);
+		}
+
+	  createFridge(fridge) {
+		    fetch('http://localhost:8080/fridges/', {method: 'POST',
+			     headers: {
+				         'Accept': 'application/json',
+        		       'Content-Type': 'application/json'
+      		         },
+			       body: JSON.stringify({fridgeName: fridge.fridgeName, ingredients: fridge.ingredients})
+			        })
+    			       .then(result => this.loadFridgesFromServer()
+  			  );
+		}
+
+		searchRecipes(fridge) {
+			//alert("etitään reseptejä" + fridge.fridgeName);
+			fetch('https://api.edamam.com/search?q=' + fridge.ingredients[0]+'&app_id=84cc7285&app_key=6a77700ce2539a2299052b5bf40e8fa4')
+			.then(result => result.json())
+      .then(resultData => this.setState({
+        recipes:  resultData.hits
+        })
+			);
+
+    alert("haettu");
+		}
+
+    addToRecipes(recipe) {
+			alert("lisätään resepteihin" + recipe.recipe.label);
+      fetch('http://localhost:8080/faveRecipes/', {method: 'POST',
+  			headers: {
+  				 'Accept': 'application/json',
+          		'Content-Type': 'application/json'
+        		},
+  			body: JSON.stringify({recipeName: recipe.recipe.label, image: recipe.recipe.image, url: recipe.recipe.url})
+  			})
+      			.then(result => this.loadFaveRecipesFromServer()
+    			);
+		}
+
+	render() {
+		return (
+			<div>
+ 				<FridgeForm
+					createFridge={this.createFridge}/>
+				<FridgeTable deleteFridge={this.deleteFridge}
+					fridges={this.state.fridges} searchRecipes={this.searchRecipes}/>
+          <h2 className="favRec">Favourite recipes</h2>
+          <FaveRecipeTable faveRecipes={this.state.faveRecipes} deleteFromRecipes={this.deleteFromRecipes} />
+          <h3 className="favRec">Search results</h3>
+        <RecipeTable recipes={this.state.recipes} addToRecipes={this.addToRecipes}/>
+			</div>
+		);
+	}
+}
+
+class FridgeTable extends React.Component {
+		constructor(props) {
+        	super(props);
+			this.deleteFridge = this.deleteFridge.bind(this);
+			this.searchRecipes = this.searchRecipes.bind(this);
+		}
+
+		deleteFridge(fridge) {
+			this.props.deleteFridge(fridge);
+		}
+
+		searchRecipes(fridge) {
+      //alert("FridgeTable" + fridge.fridgeName);
+			this.props.searchRecipes(fridge);
+      //alert("eteenpäin");
+		}
+
+ 		 render() {
+   			var rows = this.props.fridges.map(fridge =>
+        		<Fridge fridge={fridge} deleteFridge={this.deleteFridge} searchRecipes={this.searchRecipes}/>
+    		);
+
+    		return (
+			<div className="table-responsive">
+      			<table className="table table-bordered">
+        			<thead>
+          				<tr>
+            				<th>Fridge name</th>
+            				<th>Ingredients</th>
+                    <th>Search recipes</th>
+                    <th>Delete fridge</th>
+          				</tr>
+        			</thead>
+        			<tbody>{rows}</tbody>
+      			</table>
+			</div>
+    		);
+  		}
+	}
+
+class Fridge extends React.Component {
+		constructor(props) {
+			super(props);
+			this.deleteFridge = this.deleteFridge.bind(this);
+			this.searchRecipes = this.searchRecipes.bind(this);
+		}
+
+		deleteFridge() {
+			this.props.deleteFridge(this.props.fridge);
+		}
+
+		searchRecipes() {
+      //alert("hakua klikattu");
+			this.props.searchRecipes(this.props.fridge);
+      //alert("hakua klikattu2");
+		}
+
+		render() {
+
+    		return (
+		      <tr>
+        		<td>{this.props.fridge.fridgeName}</td>
+        		<td>{this.props.fridge.ingredients}</td>
+				    <td><button className="btn btn-warning" onClick={this.searchRecipes}>Search</button></td>
+				    <td><button className="btn btn-default" onClick={this.deleteFridge}>Remove</button></td>
+      		</tr>
+  			);
+		}
+	}
+class FridgeForm extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {fridgeName: '', ingredients: []};
+        this.handleSubmit = this.handleSubmit.bind(this);
+        this.handleChange = this.handleChange.bind(this);
+    }
+
+    handleChange(event) {
+			const target = event.target;
+    		const value = target.type === 'checkbox' ? target.checked : target.value;
+    		var name = target.name;
+
+    		this.setState({
+      			[name]: value
+    		});
+  		}
+
+    handleSubmit(event) {
+		var ingredients = [this.state.ingredient1, this.state.ingredient2, this.state.ingredient3, this.state.ingredient4, this.state.ingredient5,];
+		var fridge = {fridgeName: this.state.fridgeName, ingredients};
+		this.props.createFridge(fridge);
+
+    }
+
+    render() {
+        return (
+            <div className="panel panel-default">
+                <div className="panel-heading">Create your own fridge!</div>
+                <div className="panel-body">
+                <form className="form-horizontal">
+                    <div className="col-md-2">
+                        <input type="text" placeholder="Name your fridge" className="form-control"  name="fridgeName" onChange={this.handleChange}/>
+                    </div>
+                    <div className="col-md-2">
+                        <input type="text" placeholder="Ingredient1" className="form-control" name="ingredient1" onChange={this.handleChange}/>
+                    </div>
+                    <div className="col-md-2">
+                        <input type="text" placeholder="Ingredient2" className="form-control" name="ingredient2" onChange={this.handleChange}/>
+                    </div>
+					 <div className="col-md-2">
+                        <input type="text" placeholder="Ingredient3" className="form-control" name="ingredient3" onChange={this.handleChange}/>
+                    </div>
+ 					<div className="col-md-2">
+                        <input type="text" placeholder="Ingredient4" className="form-control" name="ingredient4" onChange={this.handleChange}/>
+                    </div>
+ 					<div className="col-md-2">
+                        <input type="text" placeholder="Ingredient5" className="form-control" name="ingredient5" onChange={this.handleChange}/>
+                    </div>
+                    <div className="col-md-2">
+                        <button className="btn btn-danger" onClick={this.handleSubmit}>Save</button>
+                    </div>
+                </form>
+                </div>
+            </div>
+        );
+    }
+}
+
+class RecipeTable extends React.Component {
+		constructor(props) {
+        	super(props);
+			this.addToRecipes = this.addToRecipes.bind(this);
+			//this.searchRecipes = this.searchRecipes.bind(this);
+		}
+
+		addToRecipes(recipe) {
+			this.props.addToRecipes(recipe);
+		}
+
+ 		 render() {
+   			var rows = this.props.recipes.map(recipe =>
+        		<Recipe recipe={recipe} addToRecipes={this.addToRecipes}/>
+    		);
+
+    		return (
+			<div className="table-responsive">
+      			<table className="table table-bordered">
+        			<thead>
+          				<tr>
+                    <th>Image</th>
+            				<th>Recipe name</th>
+            				<th>Add to favourites</th>
+          				</tr>
+        			</thead>
+        			<tbody>{rows}</tbody>
+      			</table>
+			</div>
+    		);
+  		}
+	}
+
+class Recipe extends React.Component {
+		constructor(props) {
+			super(props);
+			this.addToRecipes = this.addToRecipes.bind(this);
+
+		}
+
+		addToRecipes() {
+			this.props.addToRecipes(this.props.recipe);
+		}
+
+		render() {
+
+    		return (
+		      <tr>
+            <td className="imageTd"><a href={this.props.recipe.recipe.url}><img src={this.props.recipe.recipe.image}/></a></td>
+        		<td><a href={this.props.recipe.recipe.url}>{this.props.recipe.recipe.label}</a></td>
+        		<td><td><button className="btn btn-warning" onClick={this.addToRecipes}>Add to favourites</button></td></td>
+      		</tr>
+  			);
+		}
+	}
+
+  class FaveRecipeTable extends React.Component {
+  		constructor(props) {
+          	super(props);
+  			this.deleteFromRecipes = this.deleteFromRecipes.bind(this);
+  		}
+
+  		deleteFromRecipes(faveRecipe) {
+        //alert("faveRTable deletefrom" + this.props.faveRecipe.recipeName);
+  			this.props.deleteFromRecipes(faveRecipe);
+  		}
+
+   		 render() {
+     			var rows = this.props.faveRecipes.map(faveRecipe =>
+          		<FaveRecipe faveRecipe={faveRecipe} deleteFromRecipes={this.deleteFromRecipes}/>
+      		);
+
+      		return (
+  			<div className="table-responsive">
+
+        			<table className="table table-bordered">
+          			<thead>
+            				<tr>
+                      <th>Image</th>
+              				<th>Recipe name</th>
+              				<th>Delete</th>
+            				</tr>
+          			</thead>
+          			<tbody>{rows}</tbody>
+        			</table>
+  			</div>
+      		);
+    		}
+  	}
+
+  class FaveRecipe extends React.Component {
+  		constructor(props) {
+  			super(props);
+  			this.deleteFromRecipes = this.deleteFromRecipes.bind(this);
+
+  		}
+
+  		deleteFromRecipes() {
+        alert("klikattu faveR delFrom" + this.props.faveRecipe.recipeName);
+  			this.props.deleteFromRecipes(this.props.faveRecipe);
+  		}
+
+  		render() {
+
+      		return (
+  		      <tr className="active">
+              <td className="imageTd"><a href={this.props.faveRecipe.url}><img src={this.props.faveRecipe.image}/></a></td>
+          		<td><a href={this.props.faveRecipe.url}>{this.props.faveRecipe.recipeName}</a></td>
+              <td><button className="btn btn-default" onClick={this.deleteFromRecipes}>Delete</button></td>
+        		</tr>
+    			);
+  		}
+  	}
+ReactDOM.render(
+		<App/>, document.getElementById('root'));
+</script>
+
+</body>
+</html>

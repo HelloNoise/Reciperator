@@ -1,0 +1,37 @@
+body {
+	background: url('img/veggies.jpeg') !important;
+	background-size: cover !important;
+	background-attachment: fixed !important;
+    /*background-repeat: no-repeat;*/
+	padding-top: 0px !important;
+
+}
+
+.container {
+    //background-color: white !important;
+    opacity: 0.9 !important;
+  }
+
+  .panel-default {
+  	background-color:white !important;
+  }
+
+  .panel-heading {
+    font-weight: bold !important;
+  }
+
+  .page-header {
+  	background-color:white !important;
+  }
+
+  .table-bordered {
+  	background-color:white !important;
+  }
+
+  .imageTd {
+    width:20% !important;
+  }
+
+  .favRec {
+    background-color: white !important;
+  }
