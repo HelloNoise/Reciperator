@@ -37,13 +37,12 @@
 			this.searchRecipes = this.searchRecipes.bind(this);
       this.addToRecipes = this.addToRecipes.bind(this);
       this.deleteFromRecipes = this.deleteFromRecipes.bind(this);
-      //this.close = this.close.bind(this);
-      //this.open = this.open.bind(this);
 
 			this.state = {
 				fridges: [],
         recipes: [],
         faveRecipes: [],
+        open: false
 			};
 		}
 
@@ -84,7 +83,7 @@
             'Accept': 'application/json',
               'Content-Type': 'application/json'
               },
-        body: JSON.stringify({fridgeName: newFridge.newFridgeName, ingredients: newFridge.newIngredients})
+        body: JSON.stringify({fridgeName: newFridge.newFridgeName, mainIngredient: newFridge.newMainIngredient, ingredients: newFridge.newIngredients})
          })
     			.then((result) => this.loadFridgesFromServer()
 				);
@@ -109,7 +108,7 @@
 				         'Accept': 'application/json',
         		       'Content-Type': 'application/json'
       		         },
-			       body: JSON.stringify({fridgeName: fridge.fridgeName, ingredients: fridge.ingredients})
+			       body: JSON.stringify({fridgeName: fridge.fridgeName, mainIngredient: fridge.mainIngredient, ingredients: fridge.ingredients})
 			        })
     			       .then(result => this.loadFridgesFromServer()
   			  );
@@ -117,18 +116,18 @@
 
 		searchRecipes(fridge) {
 			//alert("etitään reseptejä" + fridge.fridgeName);
-			fetch('https://api.edamam.com/search?q=' + fridge.ingredients[0]+'&app_id=84cc7285&app_key=6a77700ce2539a2299052b5bf40e8fa4')
+			fetch('https://api.edamam.com/search?q=' + fridge.mainIngredient+'&app_id=84cc7285&app_key=6a77700ce2539a2299052b5bf40e8fa4')
 			.then(result => result.json())
       .then(resultData => this.setState({
         recipes:  resultData.hits
         })
 			);
 
-    alert("haettu");
+    //alert("haettu");
 		}
 
     addToRecipes(recipe) {
-			alert("lisätään resepteihin" + recipe.recipe.label);
+
       fetch('http://localhost:8080/faveRecipes/', {method: 'POST',
   			headers: {
   				 'Accept': 'application/json',
@@ -138,6 +137,7 @@
   			})
       			.then(result => this.loadFaveRecipesFromServer()
     			);
+        alert(recipe.recipe.label + " has been added to your favourites.");
 		}
 
 	render() {
@@ -148,8 +148,12 @@
 				<FridgeTable deleteFridge={this.deleteFridge}
 					fridges={this.state.fridges} searchRecipes={this.searchRecipes} updateFridge={this.updateFridge}/>
 
-          <h2 className="favRec">Favourite recipes</h2>
+<ReactBootstrap.Button onClick={ ()=> this.setState({ open: !this.state.open })}>
+          <h4 className="favRec">Show/hide your favourite recipes</h4>
+          </ReactBootstrap.Button>
+           <ReactBootstrap.Panel collapsible expanded={this.state.open}>
           <FaveRecipeTable faveRecipes={this.state.faveRecipes} deleteFromRecipes={this.deleteFromRecipes} />
+             </ReactBootstrap.Panel>
 
           <h3 className="favRec">Search results</h3>
         <RecipeTable recipes={this.state.recipes} addToRecipes={this.addToRecipes}/>
@@ -191,6 +195,7 @@ class FridgeTable extends React.Component {
         			<thead>
           				<tr>
             				<th>Fridge name</th>
+                    <th>Main ingredient</th>
             				<th>Ingredients</th>
                     <th>Search recipes</th>
                     <th>Update fridge</th>
@@ -210,6 +215,7 @@ class Fridge extends React.Component {
       this.state = {
         showModal: false,
         newFridgeName: '',
+        newMainIngredient: '',
         newIngredients: []
       };
 
@@ -224,12 +230,8 @@ class Fridge extends React.Component {
 
     updateFridge() {
       alert("fridgeUpdatefr" + this.state.newFridgeName + " " + this.props.fridge.fridgeName);
-      /*var newIngredients = [this.props.newIngredient1, this.props.newIngredient2, this.props.newIngredient3, this.props.newIngredient4, this.props.newIngredient5];
-  		var newFridge = {newFridgeName: this.props.fridgeName, newIngredients};
-      alert("fridgeUpdatefr" + this.state.fridgeName);
-      this.props.updateFridge(newFridge);*/
-      var newIngredients = [this.state.newIngredient1, this.state.newIngredient2, this.state.newIngredient3, this.state.newIngredient4, this.state.newIngredient5,];
-  		var newFridge = {newFridgeName: this.state.newFridgeName, newIngredients};
+      var newIngredients = [this.state.newIngredient1, this.state.newIngredient2, this.state.newIngredient3, this.state.newIngredient4];
+  		var newFridge = {newFridgeName: this.state.newFridgeName, newMainIngredient: this.state.newMainIngredient, newIngredients};
   		this.props.updateFridge(newFridge, this.props.fridge);
     }
 
@@ -268,6 +270,7 @@ class Fridge extends React.Component {
 
 		      <tr>
         		<td>{this.props.fridge.fridgeName}</td>
+            <td>{this.props.fridge.mainIngredient}</td>
         		<td>{this.props.fridge.ingredients}</td>
             <td><button className="btn btn-warning" onClick={this.searchRecipes}>Search</button></td>
 				    <td>
@@ -281,32 +284,32 @@ class Fridge extends React.Component {
                             <form className="dropForm">
                                 <ReactBootstrap.FormGroup>
                                     <ReactBootstrap.ControlLabel>Name</ReactBootstrap.ControlLabel>
-                                    <ReactBootstrap.FormControl type="text" name="newFridgeName" placeholder={this.props.fridge.fridgeName}
-            onChange={this.handleChange} required="required"/>
+                                    <ReactBootstrap.FormControl type="text" name="newFridgeName" required={true} placeholder={this.props.fridge.fridgeName}
+            onChange={this.handleChange}/>
                                 </ReactBootstrap.FormGroup>
                                 <ReactBootstrap.FormGroup>
                                     <ReactBootstrap.ControlLabel>Ingredient1</ReactBootstrap.ControlLabel>
-                                    <ReactBootstrap.FormControl type="text" name="newIngredient1" placeholder={this.props.fridge.ingredients[0]}
+                                    <ReactBootstrap.FormControl type="text" name="newMainIngredient" required="true" placeholder={this.props.fridge.mainIngredient}
             onChange={this.handleChange}/>
                                 </ReactBootstrap.FormGroup>
                                 <ReactBootstrap.FormGroup>
                                     <ReactBootstrap.ControlLabel>Ingredient2</ReactBootstrap.ControlLabel>
-                                    <ReactBootstrap.FormControl type="text" name="newIngredient2" placeholder={this.props.fridge.ingredients[1]}
+                                    <ReactBootstrap.FormControl type="text" name="newIngredient1" placeholder={this.props.fridge.ingredients[0]}
             onChange={this.handleChange}/>
                                 </ReactBootstrap.FormGroup>
                                 <ReactBootstrap.FormGroup>
                                     <ReactBootstrap.ControlLabel>Ingredient3</ReactBootstrap.ControlLabel>
-                                    <ReactBootstrap.FormControl type="text" name="newIngredient3" placeholder={this.props.fridge.ingredients[2]}
+                                    <ReactBootstrap.FormControl type="text" name="newIngredient2" placeholder={this.props.fridge.ingredients[1]}
             onChange={this.handleChange}/>
                                 </ReactBootstrap.FormGroup>
                                 <ReactBootstrap.FormGroup>
                                     <ReactBootstrap.ControlLabel>Ingredient4</ReactBootstrap.ControlLabel>
-                                    <ReactBootstrap.FormControl type="text" name="newIngredient4" placeholder={this.props.fridge.ingredients[3]}
+                                    <ReactBootstrap.FormControl type="text" name="newIngredient3" placeholder={this.props.fridge.ingredients[2]}
             onChange={this.handleChange}/>
                                 </ReactBootstrap.FormGroup>
                                 <ReactBootstrap.FormGroup>
                                     <ReactBootstrap.ControlLabel>Ingredient5</ReactBootstrap.ControlLabel>
-                                    <ReactBootstrap.FormControl type="text" name="newIngredient5" placeholder={this.props.fridge.ingredients[4]}
+                                    <ReactBootstrap.FormControl type="text" name="newIngredient4" placeholder={this.props.fridge.ingredients[3]}
             onChange={this.handleChange}/>
                                 </ReactBootstrap.FormGroup>
 
@@ -324,14 +327,11 @@ class Fridge extends React.Component {
 		}
 	}
 
-/*class ModalForm extends React.Component {
-
-}*/
 
 class FridgeForm extends React.Component {
     constructor(props) {
         super(props);
-        this.state = {fridgeName: '', ingredients: []};
+        this.state = {fridgeName: '', mainIngredient: '', ingredients: []};
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
     }
@@ -348,7 +348,7 @@ class FridgeForm extends React.Component {
 
     handleSubmit(event) {
 		var ingredients = [this.state.ingredient1, this.state.ingredient2, this.state.ingredient3, this.state.ingredient4, this.state.ingredient5,];
-		var fridge = {fridgeName: this.state.fridgeName, ingredients};
+		var fridge = {fridgeName: this.state.fridgeName, mainIngredient:this.state.mainIngredient, ingredients};
 		this.props.createFridge(fridge);
 
     }
@@ -360,22 +360,22 @@ class FridgeForm extends React.Component {
                 <div className="panel-body">
                 <form className="form-horizontal">
                     <div className="col-md-2">
-                        <input type="text" placeholder="Name your fridge" className="form-control"  name="fridgeName" onChange={this.handleChange}/>
+                        <input type="text" placeholder="Name your fridge" className="form-control" required="true" name="fridgeName" onChange={this.handleChange}/>
+                    </div>
+                    <div className="col-md-2">
+                        <input type="text" placeholder="Main ingredient" className="form-control" required="true" name="mainIngredient" onChange={this.handleChange}/>
                     </div>
                     <div className="col-md-2">
                         <input type="text" placeholder="Ingredient1" className="form-control" name="ingredient1" onChange={this.handleChange}/>
                     </div>
-                    <div className="col-md-2">
+					 <div className="col-md-2">
                         <input type="text" placeholder="Ingredient2" className="form-control" name="ingredient2" onChange={this.handleChange}/>
                     </div>
-					 <div className="col-md-2">
+ 					<div className="col-md-2">
                         <input type="text" placeholder="Ingredient3" className="form-control" name="ingredient3" onChange={this.handleChange}/>
                     </div>
  					<div className="col-md-2">
                         <input type="text" placeholder="Ingredient4" className="form-control" name="ingredient4" onChange={this.handleChange}/>
-                    </div>
- 					<div className="col-md-2">
-                        <input type="text" placeholder="Ingredient5" className="form-control" name="ingredient5" onChange={this.handleChange}/>
                     </div>
                     <div className="col-md-2">
                         <button className="btn btn-danger" onClick={this.handleSubmit}>Save</button>
@@ -391,7 +391,6 @@ class RecipeTable extends React.Component {
 		constructor(props) {
         	super(props);
 			this.addToRecipes = this.addToRecipes.bind(this);
-			//this.searchRecipes = this.searchRecipes.bind(this);
 		}
 
 		addToRecipes(recipe) {

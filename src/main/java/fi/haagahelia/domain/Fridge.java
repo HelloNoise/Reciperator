@@ -13,6 +13,7 @@ public class Fridge {
     @GeneratedValue(strategy=GenerationType.AUTO)
 	private Long id;
 	private String fridgeName;
+	private String mainIngredient;
 	private ArrayList<String> ingredients = new ArrayList<>();
 	
 	
@@ -23,11 +24,24 @@ public class Fridge {
 	
 	
 	
-	public Fridge(String fridgeName, ArrayList<String> ingredients) {
+	public Fridge(String fridgeName, String mainIngredient, ArrayList<String> ingredients) {
 		super();
 		this.fridgeName = fridgeName;
+		this.mainIngredient = mainIngredient;
 		this.ingredients = ingredients;
 	}
+	
+
+	public String getMainIngredient() {
+		return mainIngredient;
+	}
+
+
+	public void setMainIngredient(String mainIngredient) {
+		this.mainIngredient = mainIngredient;
+	}
+
+
 
 	public String getFridgeName() {
 		return fridgeName;
@@ -46,8 +60,8 @@ public class Fridge {
 
 	@Override
 	public String toString() {
-		return "Fridge [fridgeName=" + fridgeName
-				+ ", ingredients=" + ingredients + "]";
+		return "Fridge [fridgeName=" + fridgeName + ", mainIngredient="
+				+ mainIngredient + ", ingredients=" + ingredients + "]";
 	}
 	
 

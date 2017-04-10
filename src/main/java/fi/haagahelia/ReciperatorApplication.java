@@ -27,15 +27,15 @@ public class ReciperatorApplication {
 			
 			ArrayList<String> weekdays = new ArrayList<>();
 			weekdays.add("cheese");
-			weekdays.add("ham");
+			weekdays.add("tomato");
 			ArrayList<String> weekend = new ArrayList<>();
 			weekend.add("chicken");
 			ArrayList<String> diet = new ArrayList<>();
 			diet.add("tomato");
 			diet.add("cucumber");
-			repository.save(new Fridge("weekdays", weekdays));
-			repository.save(new Fridge("weekend", weekend));
-			repository.save(new Fridge("diet", diet));
+			repository.save(new Fridge("weekdays", "ham", weekdays));
+			repository.save(new Fridge("weekend", "chicken", weekend));
+			repository.save(new Fridge("diet", "halloumi", diet));
 			
 			rerepo.save(new FaveRecipe("turkey delight", "https://www.edamam.com/web-img/134/1344cc9d796cb5225f42df9a230e6104.jpg", "http://www.google.com/"));
 			
