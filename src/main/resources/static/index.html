@@ -22,7 +22,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.4.2/react-dom.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.24/browser.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-bootstrap/0.30.8/react-bootstrap.min.js"></script>
+    <!--<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>-->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/latest/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/latest/css/bootstrap-theme.min.css">
 
 <script type="text/babel">
   class App extends React.Component {
@@ -34,18 +37,19 @@
 			this.searchRecipes = this.searchRecipes.bind(this);
       this.addToRecipes = this.addToRecipes.bind(this);
       this.deleteFromRecipes = this.deleteFromRecipes.bind(this);
+      //this.close = this.close.bind(this);
+      //this.open = this.open.bind(this);
 
 			this.state = {
 				fridges: [],
         recipes: [],
-        faveRecipes: []
+        faveRecipes: [],
 			};
 		}
 
 		componentDidMount() {
 			this.loadFridgesFromServer();
       this.loadFaveRecipesFromServer();
-
 		}
 
 		loadFridgesFromServer() {
@@ -71,6 +75,20 @@
       			});
 			});
 		}
+
+    updateFridge(newFridge, fridge) {
+      alert(newFridge.newFridgeName + " " + fridge.fridgeName);
+      fetch(fridge._links.self.href, {method: 'PUT',
+      fridge: newFridge,
+      headers: {
+            'Accept': 'application/json',
+              'Content-Type': 'application/json'
+              },
+        body: JSON.stringify({fridgeName: newFridge.newFridgeName, ingredients: newFridge.newIngredients})
+         })
+    			.then((result) => this.loadFridgesFromServer()
+				);
+    }
 
 		deleteFridge(fridge) {
 			fetch(fridge._links.self.href, {method: 'DELETE'})
@@ -125,12 +143,14 @@
 	render() {
 		return (
 			<div>
- 				<FridgeForm
-					createFridge={this.createFridge}/>
+
+ 				<FridgeForm createFridge={this.createFridge}/>
 				<FridgeTable deleteFridge={this.deleteFridge}
-					fridges={this.state.fridges} searchRecipes={this.searchRecipes}/>
+					fridges={this.state.fridges} searchRecipes={this.searchRecipes} updateFridge={this.updateFridge}/>
+
           <h2 className="favRec">Favourite recipes</h2>
           <FaveRecipeTable faveRecipes={this.state.faveRecipes} deleteFromRecipes={this.deleteFromRecipes} />
+
           <h3 className="favRec">Search results</h3>
         <RecipeTable recipes={this.state.recipes} addToRecipes={this.addToRecipes}/>
 			</div>
@@ -143,11 +163,16 @@ class FridgeTable extends React.Component {
         	super(props);
 			this.deleteFridge = this.deleteFridge.bind(this);
 			this.searchRecipes = this.searchRecipes.bind(this);
+      this.updateFridge = this.updateFridge.bind(this);
 		}
 
 		deleteFridge(fridge) {
 			this.props.deleteFridge(fridge);
 		}
+
+    updateFridge(newFridge, fridge) {
+      this.props.updateFridge(newFridge, fridge);
+    }
 
 		searchRecipes(fridge) {
       //alert("FridgeTable" + fridge.fridgeName);
@@ -157,7 +182,7 @@ class FridgeTable extends React.Component {
 
  		 render() {
    			var rows = this.props.fridges.map(fridge =>
-        		<Fridge fridge={fridge} deleteFridge={this.deleteFridge} searchRecipes={this.searchRecipes}/>
+        		<Fridge fridge={fridge} deleteFridge={this.deleteFridge} searchRecipes={this.searchRecipes} updateFridge={this.updateFridge}/>
     		);
 
     		return (
@@ -168,6 +193,7 @@ class FridgeTable extends React.Component {
             				<th>Fridge name</th>
             				<th>Ingredients</th>
                     <th>Search recipes</th>
+                    <th>Update fridge</th>
                     <th>Delete fridge</th>
           				</tr>
         			</thead>
@@ -181,9 +207,31 @@ class FridgeTable extends React.Component {
 class Fridge extends React.Component {
 		constructor(props) {
 			super(props);
+      this.state = {
+        showModal: false,
+        newFridgeName: '',
+        newIngredients: []
+      };
+
 			this.deleteFridge = this.deleteFridge.bind(this);
 			this.searchRecipes = this.searchRecipes.bind(this);
+      this.updateFridge = this.updateFridge.bind(this);
+      this.close = this.close.bind(this);
+      this.open = this.open.bind(this);
+      this.handleChange = this.handleChange.bind(this);
 		}
+
+
+    updateFridge() {
+      alert("fridgeUpdatefr" + this.state.newFridgeName + " " + this.props.fridge.fridgeName);
+      /*var newIngredients = [this.props.newIngredient1, this.props.newIngredient2, this.props.newIngredient3, this.props.newIngredient4, this.props.newIngredient5];
+  		var newFridge = {newFridgeName: this.props.fridgeName, newIngredients};
+      alert("fridgeUpdatefr" + this.state.fridgeName);
+      this.props.updateFridge(newFridge);*/
+      var newIngredients = [this.state.newIngredient1, this.state.newIngredient2, this.state.newIngredient3, this.state.newIngredient4, this.state.newIngredient5,];
+  		var newFridge = {newFridgeName: this.state.newFridgeName, newIngredients};
+  		this.props.updateFridge(newFridge, this.props.fridge);
+    }
 
 		deleteFridge() {
 			this.props.deleteFridge(this.props.fridge);
@@ -195,18 +243,91 @@ class Fridge extends React.Component {
       //alert("hakua klikattu2");
 		}
 
+    handleChange(event) {
+			const target = event.target;
+    		const value = target.type === 'checkbox' ? target.checked : target.value;
+    		var name = target.name;
+
+    		this.setState({
+      			[name]: value
+    		});
+  		}
+
+    close() {
+        this.setState({ showModal: false });
+    }
+
+    open() {
+        alert("open");
+        this.setState({ showModal: true });
+    }
+
 		render() {
 
     		return (
+
 		      <tr>
         		<td>{this.props.fridge.fridgeName}</td>
         		<td>{this.props.fridge.ingredients}</td>
-				    <td><button className="btn btn-warning" onClick={this.searchRecipes}>Search</button></td>
+            <td><button className="btn btn-warning" onClick={this.searchRecipes}>Search</button></td>
+				    <td>
+                <ReactBootstrap.Button bsStyle="primary" onClick={this.open}>Update</ReactBootstrap.Button>
+
+                <ReactBootstrap.Modal show={this.state.showModal} onHide={this.close}>
+                    <ReactBootstrap.Modal.Header closeButton>
+                        <ReactBootstrap.Modal.Title>Update your fridge</ReactBootstrap.Modal.Title>
+                    </ReactBootstrap.Modal.Header>
+                        <ReactBootstrap.Modal.Body>
+                            <form className="dropForm">
+                                <ReactBootstrap.FormGroup>
+                                    <ReactBootstrap.ControlLabel>Name</ReactBootstrap.ControlLabel>
+                                    <ReactBootstrap.FormControl type="text" name="newFridgeName" placeholder={this.props.fridge.fridgeName}
+            onChange={this.handleChange} required="required"/>
+                                </ReactBootstrap.FormGroup>
+                                <ReactBootstrap.FormGroup>
+                                    <ReactBootstrap.ControlLabel>Ingredient1</ReactBootstrap.ControlLabel>
+                                    <ReactBootstrap.FormControl type="text" name="newIngredient1" placeholder={this.props.fridge.ingredients[0]}
+            onChange={this.handleChange}/>
+                                </ReactBootstrap.FormGroup>
+                                <ReactBootstrap.FormGroup>
+                                    <ReactBootstrap.ControlLabel>Ingredient2</ReactBootstrap.ControlLabel>
+                                    <ReactBootstrap.FormControl type="text" name="newIngredient2" placeholder={this.props.fridge.ingredients[1]}
+            onChange={this.handleChange}/>
+                                </ReactBootstrap.FormGroup>
+                                <ReactBootstrap.FormGroup>
+                                    <ReactBootstrap.ControlLabel>Ingredient3</ReactBootstrap.ControlLabel>
+                                    <ReactBootstrap.FormControl type="text" name="newIngredient3" placeholder={this.props.fridge.ingredients[2]}
+            onChange={this.handleChange}/>
+                                </ReactBootstrap.FormGroup>
+                                <ReactBootstrap.FormGroup>
+                                    <ReactBootstrap.ControlLabel>Ingredient4</ReactBootstrap.ControlLabel>
+                                    <ReactBootstrap.FormControl type="text" name="newIngredient4" placeholder={this.props.fridge.ingredients[3]}
+            onChange={this.handleChange}/>
+                                </ReactBootstrap.FormGroup>
+                                <ReactBootstrap.FormGroup>
+                                    <ReactBootstrap.ControlLabel>Ingredient5</ReactBootstrap.ControlLabel>
+                                    <ReactBootstrap.FormControl type="text" name="newIngredient5" placeholder={this.props.fridge.ingredients[4]}
+            onChange={this.handleChange}/>
+                                </ReactBootstrap.FormGroup>
+
+                                <ReactBootstrap.Button onClick={this.updateFridge}>Save</ReactBootstrap.Button>
+
+                            </form>
+                        </ReactBootstrap.Modal.Body>
+                        <ReactBootstrap.Modal.Footer>
+                            <ReactBootstrap.Button onClick={this.close}>Close</ReactBootstrap.Button>
+                        </ReactBootstrap.Modal.Footer>
+                </ReactBootstrap.Modal></td>
 				    <td><button className="btn btn-default" onClick={this.deleteFridge}>Remove</button></td>
       		</tr>
   			);
 		}
 	}
+
+/*class ModalForm extends React.Component {
+
+}*/
+
 class FridgeForm extends React.Component {
     constructor(props) {
         super(props);
